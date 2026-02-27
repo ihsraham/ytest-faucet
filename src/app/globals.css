@@ -1,0 +1,86 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 48 100% 99%;
+  --foreground: 220 29% 8%;
+  --card: 0 0% 100%;
+  --card-foreground: 220 29% 8%;
+  --border: 220 16% 84%;
+  --input: 220 18% 88%;
+  --ring: 47 95% 53%;
+  --primary: 47 95% 53%;
+  --primary-foreground: 220 29% 9%;
+  --secondary: 210 38% 96%;
+  --secondary-foreground: 220 29% 12%;
+  --muted: 215 32% 94%;
+  --muted-foreground: 220 13% 40%;
+  --accent: 198 73% 91%;
+  --accent-foreground: 220 38% 17%;
+  --destructive: 0 84% 58%;
+  --destructive-foreground: 0 0% 99%;
+  --radius: 0.9rem;
+}
+
+.dark {
+  --background: 220 22% 10%;
+  --foreground: 220 20% 98%;
+  --card: 222 25% 12%;
+  --card-foreground: 220 20% 98%;
+  --border: 220 17% 24%;
+  --input: 220 18% 22%;
+  --ring: 47 95% 58%;
+  --primary: 47 96% 57%;
+  --primary-foreground: 220 30% 8%;
+  --secondary: 216 15% 20%;
+  --secondary-foreground: 220 20% 98%;
+  --muted: 220 18% 18%;
+  --muted-foreground: 220 12% 72%;
+  --accent: 201 62% 25%;
+  --accent-foreground: 210 35% 94%;
+  --destructive: 0 72% 45%;
+  --destructive-foreground: 0 0% 98%;
+}
+
+* {
+  box-sizing: border-box;
+  border-color: hsl(var(--border));
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+}
+
+body {
+  color: hsl(var(--foreground));
+  background:
+    radial-gradient(circle at 16% 12%, hsl(var(--primary) / 0.36), transparent 33%),
+    radial-gradient(circle at 78% 8%, hsl(198 83% 62% / 0.2), transparent 28%),
+    linear-gradient(160deg, hsl(var(--background)) 0%, hsl(var(--background)) 75%);
+  font-family: var(--font-space-grotesk), 'Avenir Next', 'Segoe UI', sans-serif;
+}
+
+code,
+pre,
+.font-mono {
+  font-family: var(--font-ibm-plex-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+a {
+  color: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
