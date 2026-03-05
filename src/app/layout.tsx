@@ -25,8 +25,8 @@ export const metadata: Metadata = {
   title: 'YELLOW Faucet',
   description: 'YELLOW test token faucet for Ethereum Sepolia with on-chain cooldown and anti-abuse protections.',
   icons: {
-    icon: '/logo-light.png',
-    apple: '/logo-light.png',
+    icon: '/favicon.ico',
+    apple: '/favicon.ico',
   },
   openGraph: {
     title: 'YELLOW Faucet — Sepolia Testnet',

@@ -26,7 +26,6 @@ export function AddToWallet() {
     if (!window.ethereum) return;
 
     try {
-      const image = `${window.location.origin}/logo-light.png`;
       await window.ethereum.request({
         method: 'wallet_watchAsset',
         params: {
@@ -35,7 +34,7 @@ export function AddToWallet() {
             address: TOKEN_ADDRESS,
             symbol: TOKEN_SYMBOL,
             decimals: TOKEN_DECIMALS,
-            image,
+            image: `${window.location.origin}/favicon.ico`,
           },
         },
       });

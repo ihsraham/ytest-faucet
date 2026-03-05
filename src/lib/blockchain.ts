@@ -185,7 +185,11 @@ export async function sendDripTransaction(to: Address): Promise<{ txHash: `0x${s
         nonce,
       });
 
-      const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
+      const receipt = await publicClient.waitForTransactionReceipt({
+        hash: txHash,
+        timeout: 120_000,
+        pollingInterval: 4_000,
+      });
       if (receipt.status !== 'success') {
         throw new Error('Faucet dripTo transaction reverted');
       }
