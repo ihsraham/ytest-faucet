@@ -185,13 +185,22 @@ export async function sendDripTransaction(to: Address): Promise<{ txHash: `0x${s
         nonce,
       });
 
-      const receipt = await publicClient.waitForTransactionReceipt({
-        hash: txHash,
-        timeout: 120_000,
-        pollingInterval: 4_000,
-      });
-      if (receipt.status !== 'success') {
-        throw new Error('Faucet dripTo transaction reverted');
+      try {
+        const receipt = await publicClient.waitForTransactionReceipt({
+          hash: txHash,
+          timeout: 120_000,
+          pollingInterval: 4_000,
+        });
+        if (receipt.status !== 'success') {
+          throw new Error('Faucet dripTo transaction reverted');
+        }
+      } catch (receiptError) {
+        const msg = receiptError instanceof Error ? receiptError.message : '';
+        if (msg.includes('could not be found') || msg.includes('timed out')) {
+          console.warn(`Receipt polling timed out for ${txHash}, tx was broadcast successfully`);
+          return { txHash };
+        }
+        throw receiptError;
       }
 
       return { txHash };
