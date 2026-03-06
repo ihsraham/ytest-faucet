@@ -202,7 +202,7 @@ export async function sendDripTransaction(to: Address): Promise<{ txHash: `0x${s
           const reason = revert.data?.errorName ?? revert.message;
           if (reason.includes('cooldown')) {
             const remaining = await getOnChainCooldownRemaining(to);
-            throw new FaucetCooldownError(remaining || 3600);
+            throw new FaucetCooldownError(remaining > 0 ? remaining : 1);
           }
           if (reason.includes('insufficient balance')) {
             throw new FaucetDryError('Faucet contract token balance is insufficient');
