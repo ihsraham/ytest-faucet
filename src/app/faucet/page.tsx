@@ -138,7 +138,14 @@ export default function FaucetPage() {
 
             {/* Form */}
             <div className="p-6">
-              <FaucetForm onRequestComplete={fetchStatus} />
+              <FaucetForm
+                onRequestComplete={fetchStatus}
+                dripAmount={
+                  status?.onChainDripAmount
+                    ? Number(status.onChainDripAmount).toLocaleString()
+                    : undefined
+                }
+              />
             </div>
 
             {/* Footer stats */}
@@ -156,7 +163,7 @@ export default function FaucetPage() {
                     <span className="font-mono">
                       {status?.onChainDripAmount
                         ? `${Number(status.onChainDripAmount).toLocaleString()} ${TOKEN_SYMBOL}`
-                        : `1,000 ${TOKEN_SYMBOL}`}
+                        : `-- ${TOKEN_SYMBOL}`}
                     </span>
                     {' / '}
                     {cooldownLabel} cooldown

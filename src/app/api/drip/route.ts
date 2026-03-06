@@ -7,11 +7,12 @@ import {
   FaucetRecipientError,
   getOnChainCooldown,
   getOnChainCooldownRemaining,
+  getOnChainDripAmount,
   isContractAddress,
   normalizeAddress,
   sendDripTransaction,
 } from '@/lib/blockchain';
-import { DRIP_AMOUNT, TOKEN_SYMBOL } from '@/lib/constants';
+import { TOKEN_DECIMALS, TOKEN_SYMBOL } from '@/lib/constants';
 import {
   checkFingerprintLimit,
   checkGlobalLimit,
@@ -154,10 +155,14 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const [{ txHash }, onChainCooldownPeriod] = await Promise.all([
+    const [{ txHash }, onChainCooldownPeriod, onChainDripRaw] = await Promise.all([
       sendDripTransaction(recipientAddress),
       getOnChainCooldown(),
+      getOnChainDripAmount(),
     ]);
+
+    const { formatUnits } = await import('viem');
+    const dripAmountFormatted = Number(formatUnits(onChainDripRaw, TOKEN_DECIMALS)).toLocaleString();
 
     await Promise.all([
       setAddressCooldown(recipientAddress, txHash, Number(onChainCooldownPeriod)),
@@ -168,14 +173,14 @@ export async function POST(request: NextRequest) {
     trackServerEvent('drip_completed', {
       address: recipientAddress,
       txHash,
-      amount: DRIP_AMOUNT,
+      amount: dripAmountFormatted,
     });
 
     return json(200, {
       success: true,
       txHash,
-      amount: DRIP_AMOUNT,
-      message: `${DRIP_AMOUNT} ${TOKEN_SYMBOL} sent!`,
+      amount: dripAmountFormatted,
+      message: `${dripAmountFormatted} ${TOKEN_SYMBOL} sent!`,
     });
   } catch (error) {
     if (error instanceof FaucetRecipientError) {

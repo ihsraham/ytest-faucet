@@ -6,7 +6,7 @@ import { usePostHog } from 'posthog-js/react';
 import { TransactionStatus, type FaucetUiStatus } from '@/components/TransactionStatus';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { DRIP_AMOUNT, TOKEN_SYMBOL } from '@/lib/constants';
+import { TOKEN_SYMBOL } from '@/lib/constants';
 import { generateDeviceFingerprint } from '@/lib/fingerprint';
 
 declare global {
@@ -30,6 +30,7 @@ declare global {
 
 type FaucetFormProps = {
   onRequestComplete?: () => void;
+  dripAmount?: string;
 };
 
 type DripResponse = {
@@ -39,7 +40,7 @@ type DripResponse = {
   retryAfter?: number;
 };
 
-export function FaucetForm({ onRequestComplete }: FaucetFormProps) {
+export function FaucetForm({ onRequestComplete, dripAmount = '1,000' }: FaucetFormProps) {
   const posthog = usePostHog();
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   const [address, setAddress] = useState('');
@@ -164,7 +165,7 @@ export function FaucetForm({ onRequestComplete }: FaucetFormProps) {
           posthog?.capture('faucet_drip_success', { txHash: payload.txHash });
           setStatus({
             kind: 'success',
-            message: payload.message ?? `${DRIP_AMOUNT} ${TOKEN_SYMBOL} sent!`,
+            message: payload.message ?? `${dripAmount} ${TOKEN_SYMBOL} sent!`,
             txHash: payload.txHash,
           });
           setAddress('');
@@ -207,7 +208,7 @@ export function FaucetForm({ onRequestComplete }: FaucetFormProps) {
       <div className="space-y-1">
         <h2 className="text-lg font-semibold">Request Test Tokens</h2>
         <p className="text-sm text-muted-foreground">
-          Drip: {DRIP_AMOUNT} {TOKEN_SYMBOL} on Sepolia. One request every 24 hours per wallet.
+          Drip: {dripAmount} {TOKEN_SYMBOL} on Sepolia per wallet cooldown period.
         </p>
       </div>
 
@@ -243,7 +244,7 @@ export function FaucetForm({ onRequestComplete }: FaucetFormProps) {
         </div>
 
         <Button type="submit" className="w-full" size="lg" disabled={submitDisabled}>
-          {isSubmitting ? 'Submitting request...' : `Request ${DRIP_AMOUNT} ${TOKEN_SYMBOL}`}
+          {isSubmitting ? 'Submitting request...' : `Request ${dripAmount} ${TOKEN_SYMBOL}`}
         </Button>
       </form>
 

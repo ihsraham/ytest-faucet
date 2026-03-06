@@ -9,7 +9,6 @@ import {
 } from '@/lib/blockchain';
 import {
   CHAIN,
-  DRIP_AMOUNT,
   FAUCET_CONTRACT_ADDRESS,
   TOKEN_ADDRESS,
   TOKEN_DECIMALS,
@@ -44,7 +43,6 @@ export async function GET() {
       tokenDecimals: TOKEN_DECIMALS,
       faucetBalance: formattedBalance,
       faucetBalanceRaw: contractBalanceRaw.toString(),
-      dripAmount: DRIP_AMOUNT,
       onChainDripAmount: formatUnits(onChainDripAmount, TOKEN_DECIMALS),
       cooldownSeconds: Number(onChainCooldown),
       checks: {
@@ -72,7 +70,6 @@ export async function GET() {
         faucetContractAddress: FAUCET_CONTRACT_ADDRESS,
         tokenAddress: TOKEN_ADDRESS,
         tokenSymbol: TOKEN_SYMBOL,
-        dripAmount: DRIP_AMOUNT,
         cooldownSeconds: 86_400,
         checks: {
           redisConfigured: isRedisConfigured(),
