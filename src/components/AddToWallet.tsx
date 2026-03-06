@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { usePostHog } from 'posthog-js/react';
 import { Button } from '@/components/ui/button';
 import { TOKEN_ADDRESS, TOKEN_DECIMALS, TOKEN_SYMBOL } from '@/lib/constants';
 
@@ -15,6 +16,7 @@ declare global {
 }
 
 export function AddToWallet() {
+  const posthog = usePostHog();
   const [hasWallet, setHasWallet] = useState(false);
   const [added, setAdded] = useState(false);
 
@@ -38,6 +40,7 @@ export function AddToWallet() {
           },
         },
       });
+      posthog?.capture('add_to_wallet_success');
       setAdded(true);
     } catch {
       // User rejected or wallet error — no action needed

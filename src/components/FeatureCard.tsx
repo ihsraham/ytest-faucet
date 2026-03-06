@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { type ReactNode } from 'react';
 import { motion } from 'motion/react';
+import { usePostHog } from 'posthog-js/react';
 import { type LucideIcon, Droplets, BarChart3, Vote, Trophy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -59,6 +60,8 @@ function CardShell({ children, href, live }: { children: ReactNode; href?: strin
 }
 
 export function FeatureGrid() {
+  const posthog = usePostHog();
+
   return (
     <section className="mx-auto max-w-4xl px-4 py-16 sm:py-24">
       <motion.h2

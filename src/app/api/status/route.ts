@@ -15,7 +15,7 @@ import {
   TOKEN_DECIMALS,
   TOKEN_SYMBOL,
 } from '@/lib/constants';
-import { isRedisConfigured } from '@/lib/ratelimit';
+import { isRedisConfigured, snapshotBalance } from '@/lib/ratelimit';
 
 export const runtime = 'nodejs';
 
@@ -29,6 +29,9 @@ export async function GET() {
       getOnChainCooldown(),
     ]);
 
+    const formattedBalance = formatUnits(contractBalanceRaw, TOKEN_DECIMALS);
+    void snapshotBalance(formattedBalance);
+
     return NextResponse.json({
       success: true,
       health: 'ok',
@@ -39,7 +42,7 @@ export async function GET() {
       tokenAddress: TOKEN_ADDRESS,
       tokenSymbol: TOKEN_SYMBOL,
       tokenDecimals: TOKEN_DECIMALS,
-      faucetBalance: formatUnits(contractBalanceRaw, TOKEN_DECIMALS),
+      faucetBalance: formattedBalance,
       faucetBalanceRaw: contractBalanceRaw.toString(),
       dripAmount: DRIP_AMOUNT,
       onChainDripAmount: formatUnits(onChainDripAmount, TOKEN_DECIMALS),

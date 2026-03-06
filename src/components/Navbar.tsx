@@ -5,13 +5,14 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useCallback, useState } from 'react';
 import { motion, useMotionValueEvent, useScroll, AnimatePresence } from 'motion/react';
-import { Droplets, Github, Menu, X } from 'lucide-react';
+import { BarChart3, Droplets, Github, Menu, X } from 'lucide-react';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { cn } from '@/lib/utils';
 
 const NAV_LINKS = [
   { href: '/', label: 'Home' },
   { href: '/faucet', label: 'Faucet', icon: Droplets },
+  { href: '/dashboard', label: 'Dashboard', icon: BarChart3 },
 ] as const;
 
 const COMING_SOON = ['TVL', 'Governance', 'Leaderboard'] as const;

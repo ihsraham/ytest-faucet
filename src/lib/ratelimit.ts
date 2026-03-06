@@ -145,3 +145,91 @@ export async function logDripAttempt(input: {
   );
   await redis.ltrim(key, 0, 499);
 }
+
+function todayKey() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+export async function recordDripMetric(address: string): Promise<void> {
+  if (!redis) return;
+  const day = todayKey();
+  await Promise.all([
+    redis.incr(`metrics:drips:daily:${day}`),
+    redis.incr('metrics:drips:total'),
+    redis.sadd(`metrics:wallets:daily:${day}`, address.toLowerCase()),
+    redis.sadd('metrics:wallets:all', address.toLowerCase()),
+  ]);
+}
+
+export async function recordRejectionMetric(reason: string): Promise<void> {
+  if (!redis) return;
+  const day = todayKey();
+  await redis.incr(`metrics:rejections:${reason}:${day}`);
+}
+
+export async function snapshotBalance(balance: string): Promise<void> {
+  if (!redis) return;
+  const day = todayKey();
+  await redis.set(`metrics:balance:${day}`, balance);
+}
+
+export async function getMetrics(days: number = 30) {
+  if (!redis) return null;
+
+  const dates: string[] = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    dates.push(d.toISOString().slice(0, 10));
+  }
+
+  const pipeline = redis.pipeline();
+
+  for (const date of dates) {
+    pipeline.get(`metrics:drips:daily:${date}`);
+    pipeline.scard(`metrics:wallets:daily:${date}`);
+    pipeline.get(`metrics:balance:${date}`);
+  }
+
+  pipeline.get('metrics:drips:total');
+  pipeline.scard('metrics:wallets:all');
+
+  const rejectionReasons = [
+    'captcha', 'ip_limit', 'fingerprint',
+    'cooldown_redis', 'cooldown_onchain',
+    'contract', 'global_limit',
+  ];
+  const today = todayKey();
+  for (const reason of rejectionReasons) {
+    pipeline.get(`metrics:rejections:${reason}:${today}`);
+  }
+
+  const results = await pipeline.exec();
+
+  const daily: { date: string; drips: number; wallets: number; balance: string | null }[] = [];
+  for (let i = 0; i < dates.length; i++) {
+    const offset = i * 3;
+    daily.push({
+      date: dates[i],
+      drips: Number(results[offset]) || 0,
+      wallets: Number(results[offset + 1]) || 0,
+      balance: (results[offset + 2] as string) || null,
+    });
+  }
+
+  const totalOffset = dates.length * 3;
+  const totalDrips = Number(results[totalOffset]) || 0;
+  const totalWallets = Number(results[totalOffset + 1]) || 0;
+
+  const rejections: Record<string, number> = {};
+  for (let i = 0; i < rejectionReasons.length; i++) {
+    rejections[rejectionReasons[i]] = Number(results[totalOffset + 2 + i]) || 0;
+  }
+
+  const logsRaw = await redis.lrange('faucet:drip:logs', 0, 9);
+  const recentDrips = logsRaw.map((entry) =>
+    typeof entry === 'string' ? JSON.parse(entry) : entry,
+  );
+
+  return { daily, totalDrips, totalWallets, rejections, recentDrips };
+}

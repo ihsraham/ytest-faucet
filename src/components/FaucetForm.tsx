@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { isAddress } from 'viem';
+import { usePostHog } from 'posthog-js/react';
 import { TransactionStatus, type FaucetUiStatus } from '@/components/TransactionStatus';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,6 +40,7 @@ type DripResponse = {
 };
 
 export function FaucetForm({ onRequestComplete }: FaucetFormProps) {
+  const posthog = usePostHog();
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
   const [address, setAddress] = useState('');
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
@@ -141,6 +143,7 @@ export function FaucetForm({ onRequestComplete }: FaucetFormProps) {
       }
 
       setStatus({ kind: 'loading' });
+      posthog?.capture('faucet_form_submit');
 
       try {
         const response = await fetch('/api/drip', {
@@ -158,6 +161,7 @@ export function FaucetForm({ onRequestComplete }: FaucetFormProps) {
         const payload = (await response.json()) as DripResponse;
 
         if (response.ok && payload.success && payload.txHash) {
+          posthog?.capture('faucet_drip_success', { txHash: payload.txHash });
           setStatus({
             kind: 'success',
             message: payload.message ?? `${DRIP_AMOUNT} ${TOKEN_SYMBOL} sent!`,

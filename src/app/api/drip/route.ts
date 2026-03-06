@@ -19,9 +19,12 @@ import {
   getAddressCooldown,
   getClientIp,
   logDripAttempt,
+  recordDripMetric,
+  recordRejectionMetric,
   setAddressCooldown,
 } from '@/lib/ratelimit';
 import { verifyTurnstileToken } from '@/lib/turnstile';
+import { trackServerEvent } from '@/lib/analytics';
 
 export const runtime = 'nodejs';
 
@@ -69,6 +72,8 @@ export async function POST(request: NextRequest) {
 
     const captcha = await verifyTurnstileToken(turnstileToken, ip);
     if (!captcha.success) {
+      trackServerEvent('drip_rejected_captcha', { address: addressInput });
+      void recordRejectionMetric('captcha');
       return json(403, {
         success: false,
         message: 'CAPTCHA verification failed.',
@@ -79,6 +84,8 @@ export async function POST(request: NextRequest) {
 
     const ipLimit = await checkIpLimit(ip);
     if (!ipLimit.success) {
+      trackServerEvent('drip_rejected_ip_limit', { address: addressInput });
+      void recordRejectionMetric('ip_limit');
       return json(429, {
         success: false,
         message: 'Too many requests from your IP. Try again later.',
@@ -89,6 +96,8 @@ export async function POST(request: NextRequest) {
 
     const fingerprintLimit = await checkFingerprintLimit(fingerprint);
     if (!fingerprintLimit.success) {
+      trackServerEvent('drip_rejected_fingerprint', { address: addressInput });
+      void recordRejectionMetric('fingerprint');
       return json(429, {
         success: false,
         message: 'Too many requests from this device. Try again later.',
@@ -101,6 +110,8 @@ export async function POST(request: NextRequest) {
 
     const contractTarget = await isContractAddress(recipientAddress);
     if (contractTarget) {
+      trackServerEvent('drip_rejected_contract', { address: recipientAddress });
+      void recordRejectionMetric('contract');
       return json(400, {
         success: false,
         message: 'Contract addresses are not eligible. Use an EOA wallet address.',
@@ -109,6 +120,8 @@ export async function POST(request: NextRequest) {
 
     const cooldownSeconds = await getAddressCooldown(recipientAddress);
     if (cooldownSeconds > 0) {
+      trackServerEvent('drip_rejected_cooldown_redis', { address: recipientAddress, retryAfter: cooldownSeconds });
+      void recordRejectionMetric('cooldown_redis');
       return json(429, {
         success: false,
         message: 'This wallet is on cooldown.',
@@ -119,6 +132,8 @@ export async function POST(request: NextRequest) {
 
     const onChainCooldown = await getOnChainCooldownRemaining(recipientAddress);
     if (onChainCooldown > 0) {
+      trackServerEvent('drip_rejected_cooldown_onchain', { address: recipientAddress, retryAfter: onChainCooldown });
+      void recordRejectionMetric('cooldown_onchain');
       return json(429, {
         success: false,
         message: 'This wallet is on cooldown (on-chain).',
@@ -129,6 +144,8 @@ export async function POST(request: NextRequest) {
 
     const globalLimit = await checkGlobalLimit();
     if (!globalLimit.success) {
+      trackServerEvent('drip_rejected_global_limit', { address: recipientAddress });
+      void recordRejectionMetric('global_limit');
       return json(429, {
         success: false,
         message: 'Faucet is currently busy. Please try again later.',
@@ -144,13 +161,15 @@ export async function POST(request: NextRequest) {
 
     await Promise.all([
       setAddressCooldown(recipientAddress, txHash, Number(onChainCooldownPeriod)),
-      logDripAttempt({
-        ip,
-        address: recipientAddress,
-        txHash,
-        fingerprint,
-      }),
+      logDripAttempt({ ip, address: recipientAddress, txHash, fingerprint }),
+      recordDripMetric(recipientAddress),
     ]);
+
+    trackServerEvent('drip_completed', {
+      address: recipientAddress,
+      txHash,
+      amount: DRIP_AMOUNT,
+    });
 
     return json(200, {
       success: true,
@@ -160,13 +179,12 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     if (error instanceof FaucetRecipientError) {
-      return json(400, {
-        success: false,
-        message: error.message,
-      });
+      return json(400, { success: false, message: error.message });
     }
 
     if (error instanceof FaucetCooldownError) {
+      trackServerEvent('drip_rejected_cooldown_onchain', { retryAfter: error.remainingSeconds });
+      void recordRejectionMetric('cooldown_onchain');
       return json(429, {
         success: false,
         message: 'This wallet is on cooldown (on-chain).',
@@ -176,6 +194,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (error instanceof FaucetDryError) {
+      trackServerEvent('drip_failed_dry');
       return json(503, {
         success: false,
         message: 'Faucet contract is currently dry. Please try again later.',
@@ -183,6 +202,7 @@ export async function POST(request: NextRequest) {
     }
 
     if (error instanceof FaucetConfigurationError) {
+      trackServerEvent('drip_failed_config');
       return json(503, {
         success: false,
         message: 'Server faucet configuration is incomplete.',
@@ -190,9 +210,7 @@ export async function POST(request: NextRequest) {
     }
 
     const message = error instanceof Error ? error.message : 'Unexpected server error';
-    return json(503, {
-      success: false,
-      message,
-    });
+    trackServerEvent('drip_failed_unknown', { error: message });
+    return json(503, { success: false, message });
   }
 }

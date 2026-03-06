@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { usePostHog } from 'posthog-js/react';
 import { Button } from '@/components/ui/button';
 
 export function ThemeToggle() {
+  const posthog = usePostHog();
   const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
@@ -25,6 +27,7 @@ export function ThemeToggle() {
     setIsDark(next);
     document.documentElement.classList.toggle('dark', next);
     localStorage.setItem('theme', next ? 'dark' : 'light');
+    posthog?.capture('theme_toggled', { theme: next ? 'dark' : 'light' });
   };
 
   return (

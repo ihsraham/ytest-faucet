@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
 import { IBM_Plex_Mono, Space_Grotesk } from 'next/font/google';
 import type { ReactNode } from 'react';
+import { Analytics } from '@vercel/analytics/next';
 import { Navbar } from '@/components/Navbar';
+import { PostHogProvider } from '@/components/PostHogProvider';
 import './globals.css';
 
 const spaceGrotesk = Space_Grotesk({
@@ -50,8 +52,11 @@ export default function RootLayout({ children }: Readonly<{ children: ReactNode 
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${spaceGrotesk.variable} ${ibmPlexMono.variable} antialiased`}>
-        <Navbar />
-        {children}
+        <PostHogProvider>
+          <Navbar />
+          {children}
+        </PostHogProvider>
+        <Analytics />
       </body>
     </html>
   );
