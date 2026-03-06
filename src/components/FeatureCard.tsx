@@ -19,7 +19,7 @@ type Feature = {
 const FEATURES: Feature[] = [
   {
     title: 'Faucet',
-    description: 'Get 1,000 YELLOW test tokens with on-chain cooldown and anti-abuse protection.',
+    description: 'Get YELLOW test tokens with on-chain cooldown and anti-abuse protection.',
     icon: Droplets,
     href: '/faucet',
     live: true,
